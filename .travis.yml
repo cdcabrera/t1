@@ -13,13 +13,11 @@ notifications:
 before_script:
   - npm prune
 
-after_success:
-  - 'git fetch --tags;
-     if [ ! $(git tag -l v* | tail -n1) ]; then
-       git tag v0.0.0 $(git rev-list --max-parents=0 HEAD);
-       echo "Temporary tag v0.0.0 added.";
-     fi;'
-  - npm run semantic:release
+deploy:
+  provider: script
+  script: scripts/deploy.sh
+  on:
+    branch: master
 
 branches:
   except:
