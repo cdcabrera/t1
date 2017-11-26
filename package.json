@@ -1,0 +1,45 @@
+{
+  "name": "t1",
+  "version": "0.0.0-development",
+  "description": "t1",
+  "author": "CD Cabrera <cabrera.code@gmail.com>",
+  "contributors": [],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cdcabrera/t1.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cdcabrera/t1/issues"
+  },
+  "homepage": "https://github.com/cdcabrera/t1#readme",
+  "engines": {
+    "node": ">=8.9.1"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "node index",
+    "test": "echo \"Error: no test specified\" && exit 0",
+    "commit": "git add --all; git cz",
+    "semantic:setup": "semantic-release-cli setup",
+    "semantic:release": "semantic-release pre && semantic-release post",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+  },
+  "keywords": [],
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-conventional-changelog"
+    }
+  },
+  "release": {
+    "getLastRelease": "last-release-git"
+  },
+  "devDependencies": {
+    "semantic-release": "^8.2.0",
+    "semantic-release-cli": "^3.2.6",
+    "last-release-git": "^0.0.3",
+    "commitizen": "^2.9.6",
+    "cz-conventional-changelog": "^2.1.0"
+  },
+  "dependencies": {}
+}

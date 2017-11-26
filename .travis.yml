@@ -1,0 +1,22 @@
+language: node_js
+
+node_js:
+  - '8'
+
+cache:
+  directories:
+    - node_modules
+
+notifications:
+  email: false
+
+before_script:
+  - npm prune
+
+after_success:
+  - git fetch --tags
+  - npm run semantic:release
+
+branches:
+  except:
+    - /^v\d+\.\d+\.\d+$/
