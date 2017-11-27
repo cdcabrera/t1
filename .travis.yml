@@ -18,9 +18,6 @@ after_success:
      if[[ "${TRAVIS_PULL_REQUEST}" != "false" ]]; then
        echo "Pull request test...";
      fi;
-     if[[ "${TRAVIS_PULL_REQUEST}" = "false" ]]; then
-       echo "NOT a pull request test...";
-     fi;
      if [ ! $(git tag -l v* | tail -n1) ]; then
        git tag v0.0.0 $(git rev-list --max-parents=0 HEAD);
        echo "Temporary tag v0.0.0 added.";
