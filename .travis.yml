@@ -14,20 +14,14 @@ before_script:
   - npm prune
 
 after_success:
-  - 'git fetch --tags;
-     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-       echo "Yup not a pull request";
-     fi;
-     if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-       echo "PULLLLL request";
-     fi;
-     echo "lolz semantic releases melts when you accidentally rebase on top of a released/tagged commit";
-     echo "${TRAVIS_PULL_REQUEST}";
-     if [ ! $(git tag -l v* | tail -n1) ]; then
-       git tag v0.0.0 $(git rev-list --max-parents=0 HEAD);
-       echo "Temporary tag v0.0.0 added.";
+  - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+       git fetch --tags;
+       if [ ! $(git tag -l v* | tail -n1) ]; then
+         git tag v0.0.0 $(git rev-list --max-parents=0 HEAD);
+         echo "Temporary tag v0.0.0 added.";
+       fi;
+       npm run semantic:release;
      fi;'
-  - npm run semantic:release
 
 branches:
   only:
