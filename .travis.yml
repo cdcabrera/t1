@@ -15,9 +15,7 @@ before_script:
 
 after_success:
   - 'git fetch --tags;
-     if[[ "${TRAVIS_PULL_REQUEST}" != "false" ]]; then
-       echo "Pull request test...";
-     fi;
+     echo "${TRAVIS_PULL_REQUEST}";
      if [ ! $(git tag -l v* | tail -n1) ]; then
        git tag v0.0.0 $(git rev-list --max-parents=0 HEAD);
        echo "Temporary tag v0.0.0 added.";
