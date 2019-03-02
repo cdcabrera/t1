@@ -25,9 +25,11 @@
     "functions": 50,
     "branches": 50
   },
-  "bin": "./bin/t1.js",
+  "bin": {
+    "t2go": "./bin/t2.js"
+  },
   "scripts": {
-    "start": "node ./bin/t1.js --hello=\"weeeee\" --lorem",
+    "start": "./bin/t2.js --hello=\"weeeee\" --lorem",
     "release": "> ./CHANGELOG.md && standard-version",
     "test": "nyc mocha --recursive \"./src/**/*.js\"",
     "coverage": "nyc report --reporter=text-lcov > coverage.lcov"
