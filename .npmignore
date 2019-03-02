@@ -1,0 +1,6 @@
+.editorconfig
+.eslintrc
+.prettierignore
+.travis.yml
+CHANGELOG.md
+yarn.lock
