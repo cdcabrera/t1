@@ -1,16 +1,10 @@
 {
   "name": "t2cd",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "testing",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "source": "src/index.js",
-  "files": [
-    "css",
-    "es",
-    "lib",
-    "umd"
-  ],
   "author": "CD Cabrera <cabrera.code@gmail.com>",
   "homepage": "",
   "license": "MIT",

@@ -1,10 +1,11 @@
 *
 !package.json
-!bin/**/*.js
 !dist/**/*.js
 !src/**/*.js
+!src/**/*.md
 src/**/*test.js
 src/**/*.archive
+src/**/*generated
 !LICENSE
 !README.md
 !CHANGELOG.md
