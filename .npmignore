@@ -5,3 +5,15 @@
 !LICENSE
 !README.md
 !CHANGELOG.md
+
+
+*
+!package.json
+!bin/**/*.js
+!dist/**/*.js
+!src/**/*.js
+src/**/*test.js
+src/**/*.archive
+!LICENSE
+!README.md
+!CHANGELOG.md
