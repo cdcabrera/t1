@@ -20,3 +20,5 @@ api-debug*
 # misc
 .env
 release.txt
+.cache
+src/generated
