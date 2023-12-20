@@ -1,4 +1,4 @@
-'use strict';
+const { sampleFunction } = require('../../src/sampleFunction');
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
@@ -21,6 +21,7 @@ const components = {
   Two
 };
 
+exports.sampleFunction = sampleFunction;
 exports.One = One;
 exports.Two = Two;
 exports["default"] = components;
