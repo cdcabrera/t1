@@ -1,0 +1,30 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 2
+    target-branch: "master"
+    versioning-strategy: increase
+    allow:
+      - dependency-type: direct
+    labels:
+      - "build"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      dependencies-patch:
+        dependency-type: "production"
+        update-types:
+          - "patch"
+      dependencies-minor:
+        dependency-type: "production"
+        update-types:
+          - "minor"
