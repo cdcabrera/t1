@@ -83,10 +83,10 @@ chalk@^2.4.1:
     escape-string-regexp "^1.0.5"
     supports-color "^5.3.0"
 
-changelog-light@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/changelog-light/-/changelog-light-1.2.0.tgz#eef6ca55f3e3cb2552b17e9208e27752672057aa"
-  integrity sha512-CLNwuZVj8+RZ/CN8BUZH1EJ1GOGJ7kYYjzqHVdTIXvAhpimgULnzUJr2L5XheNsJd1qkUvk0C5hM362TuIh+/Q==
+changelog-light@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/changelog-light/-/changelog-light-2.0.0.tgz#ef2bed2424366e456dd0f867f3946ddd1e56ae6a"
+  integrity sha512-mJj1kHE0mQDofQ860qdB9eGqCeG2yR9weAGdH1LKrQgJa/X0IZg/AEqfXmQyMb3/lnGp3/KSzBFkpSTotYc6Vg==
   dependencies:
     conventional-commit-types "^3.0.0"
     semver "^7.6.0"
