@@ -30,7 +30,7 @@
     "release": "standard-version"
   },
   "dependencies": {
-    "@patternfly/react-core": "5.3.3"
+    "@patternfly/react-core": "5.4.0"
   },
   "peerDependencies": {
     "react": "^18.2.0",
