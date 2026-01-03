@@ -29,5 +29,6 @@
   "peerDependencies": {
   },
   "devDependencies": {
+    "changelog-light": "3.0.4"
   }
 }
