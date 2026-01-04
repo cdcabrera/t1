@@ -1,6 +1,6 @@
 {
   "name": "t2cd",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "testing alt dist output",
   "module": "./src/index.js",
   "exports": {
