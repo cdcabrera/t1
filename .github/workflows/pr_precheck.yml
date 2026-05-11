@@ -29,9 +29,9 @@ jobs:
         with:
           script: |
             const path = require('path');
-            console.log('>>>>>>> 1', path.resolve('trusted-gatekeeper', 'scripts', 'workflow.preCheck.js'));
+            // console.log('>>>>>>> 1', path.resolve('trusted-gatekeeper', 'scripts', 'workflow.preCheck.js'));
 
-            const scriptPath = `./trusted-gatekeeper/scripts/workflow.preCheck.js`;
+            const scriptPath = path.resolve('trusted-gatekeeper/scripts/workflow.preCheck.js');
             const module = await import(scriptPath);
             const startFn = module.start || module.default;
 
