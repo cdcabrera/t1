@@ -31,8 +31,8 @@ jobs:
             const path = require('path');
             console.log('>>>>>>> 1', path.resolve('trusted-gatekeeper', 'scripts', 'workflow.preCheck.js'));
 
-            const scriptPath = `${process.env.GITHUB_WORKSPACE}/trusted-gatekeeper/scripts/workflow.preCheck.js`;
-            const module = await import(scriptUrl);
+            const scriptPath = `./trusted-gatekeeper/scripts/workflow.preCheck.js`;
+            const module = await import(scriptPath);
             const startFn = module.start || module.default;
 
             await startFn({
