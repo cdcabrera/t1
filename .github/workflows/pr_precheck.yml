@@ -21,14 +21,12 @@ jobs:
           sparse-checkout: |
             .github
             scripts
-          sparse-checkout-cone-mode: false
 
       - name: Validate PR
         uses: actions/github-script@v9
         with:
           script: |
-            const path = require('path');
-            const scriptPath = path.resolve(process.cwd(), 'scripts', 'workflow.preCheck.js');
+            const scriptPath = `${process.env.GITHUB_WORKSPACE}/scripts/workflow.preCheck.js`;
             const module = await import(scriptPath);
             const startFn = module.start || module.default;
 
@@ -46,8 +44,7 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const path = require('path');
-            const scriptPath = path.resolve(process.cwd(), 'scripts', 'workflow.commitLint.js');
+            const scriptPath = `${process.env.GITHUB_WORKSPACE}/scripts/workflow.commitLint.js`;
             const module = await import(scriptPath);
             const workflowCommitLint = module.workflowCommitLint || module.default;
 
