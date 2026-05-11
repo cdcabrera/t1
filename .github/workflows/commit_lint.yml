@@ -1,14 +1,16 @@
 name: Commit lint
 on:
-  workflow_run:
-    workflows: ["PR PreCheck"]
-    types: [completed]
+  pull_request:
+    types: [labeled]
+
 env:
   BRANCH: ${{ github.base_ref }}
 
 jobs:
   Commits:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: |
+      github.event.label.name == 'bot:ready-for-testing' ||
+      github.event.label.name == 'bot:maintainer-bypass'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

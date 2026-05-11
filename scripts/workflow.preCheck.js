@@ -428,7 +428,7 @@ const start = async ({
 
   if (coreContributors({ author, authorType, authorRole })) {
     console.log(`Contributor found, skipping pre-checks: ${author}`);
-    await addLabels([LABEL_PRECHECKS_PASS]);
+    await addLabels([LABEL_PRECHECKS_BYPASS]);
     return;
   }
 
