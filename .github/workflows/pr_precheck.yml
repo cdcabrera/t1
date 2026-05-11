@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.base.ref }} # Force our main/base branch
+          path: trusted-gatekeeper
           sparse-checkout: |
             .github
             scripts
@@ -27,7 +28,7 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const scriptPath = `${process.env.GITHUB_WORKSPACE}/scripts/workflow.preCheck.js`;
+            const scriptPath = `${process.env.GITHUB_WORKSPACE}/trusted-gatekeeper/scripts/workflow.preCheck.js`;
             const module = await import(scriptPath);
             const startFn = module.start || module.default;
 
@@ -45,7 +46,7 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const scriptPath = `${process.env.GITHUB_WORKSPACE}/scripts/workflow.commitLint.js`;
+            const scriptPath = `${process.env.GITHUB_WORKSPACE}/trusted-gatekeeper/scripts/workflow.commitLint.js`;
             const module = await import(scriptPath);
             const workflowCommitLint = module.workflowCommitLint || module.default;
 
