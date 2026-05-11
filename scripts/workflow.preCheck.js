@@ -1,4 +1,4 @@
-const fs = require('node:fs');
+import fs from 'node:fs';
 
 /**
  * Confirm specific authors/contributors from an available CODEOWNERS file.
@@ -492,7 +492,7 @@ const start = async ({
   }
 };
 
-module.exports = {
+export {
   coreContributors,
   doesListContainAnotherListValues,
   getCommentId,
