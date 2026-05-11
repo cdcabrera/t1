@@ -28,16 +28,11 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const { pathToFileURL } = require('url');
+            const path = require('path');
+            const test = ;
+            console.log('>>>>>>> 1', path.resolve('trusted-gatekeeper', 'scripts', 'workflow.preCheck.js'));
 
-            // 1. Build the absolute system path string
-            const absolutePath = `${process.env.GITHUB_WORKSPACE}/trusted-gatekeeper/scripts/workflow.preCheck.js`;
-            console.log('1', process.env.GITHUB_WORKSPACE);
-            console.log('2', process.pwd());
-            // 2. Convert it to a valid file:// URL format (Node ESM Requirement)
-            const scriptUrl = pathToFileURL(absolutePath).href;
-
-            // const scriptPath = `${process.env.GITHUB_WORKSPACE}/trusted-gatekeeper/scripts/workflow.preCheck.js`;
+            const scriptPath = `${process.env.GITHUB_WORKSPACE}/trusted-gatekeeper/scripts/workflow.preCheck.js`;
             const module = await import(scriptUrl);
             const startFn = module.start || module.default;
 
