@@ -2,6 +2,7 @@
   "name": "t2cd",
   "version": "0.1.11",
   "description": "testing alt dist output",
+  "type": "module",
   "module": "./src/index.js",
   "exports": {
     ".": {
@@ -29,6 +30,6 @@
   "peerDependencies": {
   },
   "devDependencies": {
-    "changelog-light": "3.0.4"
+    "changelog-light": "3.0.8"
   }
 }
