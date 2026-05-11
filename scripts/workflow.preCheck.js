@@ -16,8 +16,8 @@ import fs from 'node:fs';
  */
 const coreContributors = ({ author, authorType, authorRole } = {}, { allowBots = true, allowMaintainers = true } = {}) => {
   const bots = ['Bot', 'dependabot[bot]'];
-  const contributors = [];
-  const codeOwnersPaths = [];
+  const contributors = ['OWNER'];
+  const codeOwnersPaths = ['.github/CODEOWNERS', 'CODEOWNERS'];
 
   const isBot = allowBots && (bots.includes(authorType) || bots.includes(author));
   const isMaintainer = allowMaintainers && contributors.includes(authorRole);
