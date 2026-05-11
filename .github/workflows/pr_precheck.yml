@@ -1,9 +1,9 @@
 name: PR PreCheck
 on:
+  pull_request:
+    types: [ opened, synchronize, reopened, labeled ]
   issue_comment:
     types: [ created ]
-  pull_request:
-    types: [opened, edited, synchronize]
 
 jobs:
   gatekeeper:
