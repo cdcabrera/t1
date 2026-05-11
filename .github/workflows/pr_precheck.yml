@@ -29,7 +29,6 @@ jobs:
         with:
           script: |
             const path = require('path');
-            const test = ;
             console.log('>>>>>>> 1', path.resolve('trusted-gatekeeper', 'scripts', 'workflow.preCheck.js'));
 
             const scriptPath = `${process.env.GITHUB_WORKSPACE}/trusted-gatekeeper/scripts/workflow.preCheck.js`;
