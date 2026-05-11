@@ -22,7 +22,7 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const preCheck = await import(`${github.workspace}/scripts/workflow.preCheck.mjs`);
+            const preCheck = await import(`${process.env.GITHUB_WORKSPACE}/scripts/workflow.preCheck.js`);
 
             await preCheck.start({
               isFreezeActive: '${{ vars.RELEASE_FREEZE_ACTIVE }}' === 'true',
