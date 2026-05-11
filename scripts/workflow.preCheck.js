@@ -391,6 +391,14 @@ const getPullRequest = async ({ github, context } = {}) => {
   return {};
 };
 
+const authorAgreementAcceptance = ({ comments, author } = {}) => {
+  const updatedComments = Array.isArray(comments) ? comments : [];
+  return updatedComments.some(comment =>
+    comment.body?.trim()?.toLowerCase() === '/accept' &&
+    (comment.user?.login === author)
+  );
+};
+
 /**
  * Start the pre-check process.
  *
@@ -454,30 +462,34 @@ const start = async ({
   }
 
   // Contributor's Agreement
-  const isConfirmed = context.payload.pull_request.labels.some(label => label.name === LABEL_CONFIRMED);
+  // const isConfirmed = context.payload.pull_request.labels.some(label => label.name === LABEL_CONFIRMED);
+  // const { authorReaction } = await getReactions({ github, context, comments, signature: agreementCommentSignature });
+  const isConfirmed = authorAgreementAcceptance({ comments, author });
+  let agreeCommentRemove;
 
   if (!isConfirmed) {
     const agreementCommentSignature = '<!-- precheck-bot-agreement-V1 -->';
     const { add: addAgreementComment, remove: removeAgreementComment, existingCommentId: agreementCommentId } =
       await setComment({ signature: agreementCommentSignature, github, context });
-
+    agreeCommentRemove = removeAgreementComment;
     if (!agreementCommentId) {
       const agreementComment = `### 🤖 PR Contributor's Agreement\n\n` +
-        `I'm ready to help! Give my comment a 👍 to confirm you've read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md) and unlock the testing suite.`;
+        'I\'m ready to help! Comment `/accept` to confirm you\'ve read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md) and unlock the testing suite.';
 
       await addAgreementComment(agreementComment);
 
       return;
     }
 
-    const { authorReaction } = await getReactions({ github, context, signature: agreementCommentSignature });
+    return;
 
     // No reaction
-    if (authorReaction === 0) {
-      return;
-    }
+    // if (authorReaction === 0) {
+    //  return;
+    // }
 
     // Thumbs down reaction
+    /*
     if (authorReaction === -1) {
       const declinedComment = `### 🤖 PR Contributor's Agreement\n` +
         `🚫 I noticed you declined the agreement, so I've paused automation. If you change your mind, just change your reaction to a 👍!`;
@@ -486,14 +498,20 @@ const start = async ({
       await addLabels([LABEL_UNCONFIRMED]);
 
       return;
-    }
+    }*/
 
     // Thumbs up reaction
-    if (authorReaction === 1) {
+    /*if (authorReaction === 1) {
       await removeAgreementComment();
       await addLabels([LABEL_CONFIRMED]);
       await removeLabels([LABEL_UNCONFIRMED]);
+    }*/
+  } else {
+    if (agreeCommentRemove) {
+      await agreeCommentRemove();
     }
+    await addLabels([LABEL_CONFIRMED]);
+    await removeLabels([LABEL_UNCONFIRMED]);
   }
 
   // Signature checks found feature-like work, notify the user they may not be following guidance
