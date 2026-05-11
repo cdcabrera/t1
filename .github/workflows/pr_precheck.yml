@@ -27,7 +27,7 @@ jobs:
         with:
           script: |
             const path = require('path');
-            const scriptPath = path.resolve(process.env.GITHUB_WORKSPACE, 'scripts', 'workflow.preCheck.js');
+            const scriptPath = path.resolve(process.cwd(), 'scripts', 'workflow.preCheck.js');
             const module = await import(scriptPath);
             const startFn = module.start || module.default;
 
@@ -46,7 +46,7 @@ jobs:
         with:
           script: |
             const path = require('path');
-            const scriptPath = path.resolve(process.env.GITHUB_WORKSPACE, 'scripts', 'workflow.commitLint.js');
+            const scriptPath = path.resolve(process.cwd(), 'scripts', 'workflow.commitLint.js');
             const module = await import(scriptPath);
             const workflowCommitLint = module.workflowCommitLint || module.default;
 
