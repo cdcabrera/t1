@@ -8,9 +8,7 @@ env:
 
 jobs:
   Commits:
-    if: |
-      contains(github.event.pull_request.labels.*.name, 'bot:ready-for-testing') ||
-      contains(github.event.pull_request.labels.*.name, 'bot:maintainer-bypass')
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
