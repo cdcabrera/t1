@@ -492,7 +492,7 @@ const start = async ({
   }
 };
 
-export {
+module.exports = {
   coreContributors,
   doesListContainAnotherListValues,
   getCommentId,

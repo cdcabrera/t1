@@ -20,20 +20,16 @@ jobs:
           ref: ${{ github.event.pull_request.base.ref }} # Force our main/base branch
           path: trustedgatekeeper
           sparse-checkout: |
-            .github/
-            scripts/
+            .github
+            scripts
 
       - name: Validate PR
         uses: actions/github-script@v9
         with:
           script: |
             const path = require('path');
-            // console.log('>>>>>>> 1', path.resolve('trustedgatekeeper', 'scripts', 'workflow.preCheck.js'));
-
-            // const scriptPath = path.resolve('trustedgatekeeper/scripts/workflow.preCheck.js');
             const scriptPath = path.resolve(process.env.GITHUB_WORKSPACE, 'trustedgatekeeper', 'scripts', 'workflow.preCheck.js');
-            const module = await import(scriptPath);
-            const startFn = module.start || module.default;
+            const module = require(scriptPath);
 
             await module.start({
               LABEL_NEEDS_CLEANUP: 'bot:needs-cleanup',
