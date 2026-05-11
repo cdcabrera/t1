@@ -424,16 +424,16 @@ const start = async ({
   LABEL_SEC
 } = {}, { github, context, core } = {}) => {
   const { author, authorType, authorRole, description: prDescription, fileCount: prFileCount, files: prFiles, comments } = await getPullRequest({ github, context });
+  const { add: addLabels, remove: removeLabels } = await setLabels({ github, context });
 
   if (coreContributors({ author, authorType, authorRole })) {
     console.log(`Contributor found, skipping pre-checks: ${author}`);
-
+    await addLabels([LABEL_PRECHECKS_PASS]);
     return;
   }
 
   const botCommentSignature = '<!-- precheck-bot-comment-V1 -->';
   const { add: addBotComment } = await setComment({ signature: botCommentSignature, github, context });
-  const { add: addLabels, remove: removeLabels } = await setLabels({ github, context });
 
   if (isFreezeActive) {
     await addLabels([LABEL_CODE_FREEZE]);

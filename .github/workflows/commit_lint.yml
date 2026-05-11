@@ -30,7 +30,7 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const workflowCommitLint = await import(`${ github.workspace }/scripts/workflow.commitLint.js`);
+            const workflowCommitLint = await import(`${ process.env.GITHUB_WORKSPACE }/scripts/workflow.commitLint.js`);
 
             const { resultsArray, resultsString } = workflowCommitLint(process.env.GIT_COMMITS)
 
