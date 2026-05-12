@@ -27,37 +27,82 @@ jobs:
         with:
           script: |
             const path = require('path');
-            const scriptPath = path.resolve(process.env.GITHUB_WORKSPACE, 'scripts', 'workflow.preCheck.js');
-            const module = await import(scriptPath);
-            const startFn = module.start || module.default;
+            let startFn;
+            try {
+              const scriptPath = path.resolve(process.env.GITHUB_WORKSPACE, 'scripts', 'workflow.preCheck.js');
+              const module = await import(scriptPath);
+              startFn = module.start || module.default;
+            } catch (err) {
+              console.error('PreCheck loading error.', err?.message || err);
+              core.setFailed('PreCheck loading error. File is missing or unreadable. Has the file been checked in?');
+            }
 
-            await startFn({
-              LABEL_NEEDS_CLEANUP: 'bot:needs-cleanup',
-              LABEL_NEEDS_MAINTAINER: 'bot:needs-maintainer',
-              LABEL_PRECHECKS_PASS: 'bot:ready-for-testing'
-            }, {
-              github,
-              context,
-              core,
-            });
+            if (startFn) {
+              await startFn({
+                  LABEL_NEEDS_CLEANUP: 'bot:needs-cleanup',
+                  LABEL_NEEDS_MAINTAINER: 'bot:needs-maintainer',
+                  LABEL_PRECHECKS_PASS: 'bot:policy-ready'
+                }, {
+                  github,
+                  context,
+                  core,
+                });
+            }
 
       - name: Lint
         uses: actions/github-script@v9
         with:
           script: |
             const path = require('path');
-            const scriptPath = path.resolve(process.env.GITHUB_WORKSPACE, 'scripts', 'workflow.commitLint.js');
-            const module = await import(scriptPath);
-            const workflowCommitLint = module.workflowCommitLint || module.default;
-
-            const { data: commits } = await github.rest.pulls.listCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-            });
-
-            const { resultsArray, resultsString } = workflowCommitLint(commits);
-
-            if (resultsArray.length) {
-              core.setFailed(resultsString);
+            let startFn;
+            try {
+              const scriptPath = path.resolve(process.env.GITHUB_WORKSPACE, 'scripts', 'workflow.commitLint.js');
+              const module = await import(scriptPath);
+              startFn = module.start || module.default;
+            } catch (err) {
+              console.error('Lint loading error.', err?.message || err);
+              core.setFailed('Lint loading error. File is missing or unreadable. Has the file been checked in?');
             }
+
+            if (startFn) {
+              const { data: commits } = await github.rest.pulls.listCommits({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+              });
+
+              const { resultsArray, resultsString } = startFn(commits, {
+                  allowIssuesAnywhere: false,
+                  issueNumberExceptions: ['build', 'chore', 'ci', 'docs', 'fix', 'perf', 'refactor', 'test'],
+                  maxMessageLength: 65,
+                  typeScopeExceptions: '*'
+                });
+
+              if (resultsArray.length) {
+                core.setFailed(resultsString);
+              }
+            }
+
+  Integration-checks:
+    runs-on: ubuntu-latest
+    needs: Gatekeeper
+    if: ${{ always() && (github.event_name == 'push' || needs.Gatekeeper.result != 'cancelled') }}
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x, 24.x]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6.3.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install Node.js packages
+        run: npm ci
+
+      - name: Lint and test
+        run: npm test
