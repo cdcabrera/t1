@@ -16,8 +16,8 @@ import fs from 'node:fs';
  */
 const coreContributors = ({ author, authorType, authorRole } = {}, { allowBots = true, allowMaintainers = true } = {}) => {
   const bots = ['Bot', 'dependabot[bot]'];
-  const contributors = [];
-  const codeOwnersPaths = [];
+  const contributors = ['OWNER'];
+  const codeOwnersPaths = ['.github/CODEOWNERS', 'CODEOWNERS'];
 
   const isBot = allowBots && (bots.includes(authorType) || bots.includes(author));
   const isMaintainer = allowMaintainers && contributors.includes(authorRole);
@@ -29,10 +29,14 @@ const coreContributors = ({ author, authorType, authorRole } = {}, { allowBots =
     }
 
     const content = fs.readFileSync(filePath, 'utf8');
+    const isAvailable = content
+      .split(/[\s,()]+/)
+      .filter(Boolean)
+      .includes(`@${author}`);
 
-    if (content.includes(`@${author}`)) {
-      // if (new RegExp(`@${author}\\b`).test(content)) {
+    if (isAvailable) {
       isCodeOwner = true;
+      break;
     }
   }
 
@@ -106,6 +110,7 @@ const signatureScan = ({ description, files, fileCount } = {}) => {
     '.github',
     '.gitignore',
     '.npmrc',
+    '.sh',
     'package-lock.json',
     'src/index',
     'scripts/workflow'
@@ -115,8 +120,6 @@ const signatureScan = ({ description, files, fileCount } = {}) => {
   const extrasList = [
     '__fixtures__',
     '__mocks__',
-    '.js',
-    '.sh',
     'src/fixtures',
     'src/mocks'
   ];
@@ -154,23 +157,23 @@ const signatureScan = ({ description, files, fileCount } = {}) => {
     const errors = [];
 
     if (isMaxFilesUpdated === true) {
-      errors.push(`⚠️ You've updated a lot of files (${fileCount}/${fileChangeLimit}). To keep things focused, please try to limit the scope of your PR as suggested in our guidelines.`);
+      errors.push(`⚠️ You've updated a lot of files (${fileCount}/${fileChangeLimit}). **Resolution:** Please reduce the scope of these changes by splitting them into smaller, more focused PR contributions.`);
     }
 
     if (isCoreModified) {
-      errors.push(`⚠️ I detected core file modifications (${coreModified.join(', ')}). These changes usually require a bit more planning—check the guidelines for details.`);
+      errors.push(`⚠️ I detected core file modifications. Updates to core files require an associated issue (${coreModified.join(', ')}). **Resolution:** Please link an issue in your PR description. If no issue exists your PR will be delayed for review, and may be closed.`);
     }
 
     if (isExtraModified) {
-      errors.push(`⚠️ I've found extras in your updates that may not be required (${extraModified.join(', ')}). Aligning to the codebase style and workflow means your effort is more likely to be reviewed.`);
+      errors.push(`⚠️ I've found extra file updates. You may be attempting to tailor the codebase to your workflow (${extraModified.join(', ')}). **Resolution:** Please align to the codebase style and remove these changes. You can also provide an explanation in your PR description but expect a delay in review.`);
     }
 
     if (isAgentModified) {
-      errors.push(`⚠️ I found local agent modifications in your changes (${agentModified.join(', ')}). These changes require a core contributor's involvement.`);
+      errors.push(`⚠️ I found local agent modifications in your changes (${agentModified.join(', ')}). **Resolution:** Changes to agent guidelines require maintainer approval. Please remove these changes unless instructed otherwise.`);
     }
 
     if (isSecModified) {
-      errors.push(`⚠️ I've found updates that may require a core contributor's involvement (${secModified.join(', ')}). I'll make sure they know.`);
+      errors.push(`⚠️ I've found updates that may require a core contributor's involvement (${secModified.join(', ')}). **Resolution:** A core contributor must review these changes. You can remove these changes, or provide an explanation in your PR description and expect a delay in review.`);
     }
 
     return {
@@ -222,13 +225,17 @@ const setLabels = ({ github, context } = {}) => {
   return {
     add: async labels => {
       if (Array.isArray(labels)) {
-        await addLabels({ owner, repo, issue_number: issueNumber, labels }).catch(() => {});
+        await addLabels({ owner, repo, issue_number: issueNumber, labels }).catch(err => {
+          console.error(`Workflow add labels failed: ${labels.join(', ')}`, err?.message || err);
+        });
       }
     },
     remove: async labels => {
       if (Array.isArray(labels)) {
         for (const label of labels) {
-          await removeLabel({ owner, repo, issue_number: issueNumber, name: label }).catch(() => {});
+          await removeLabel({ owner, repo, issue_number: issueNumber, name: label }).catch(err => {
+            console.error(`Workflow remove label failed: ${label}`, err?.message || err);
+          });
         }
       }
     }
@@ -236,7 +243,7 @@ const setLabels = ({ github, context } = {}) => {
 };
 
 /**
- * Get an ID from an issue number.
+ * Get a comment ID from an issue number using a signature.
  *
  * @param signature
  * @param config
@@ -284,55 +291,20 @@ const setComment = async ({ signature, github, context } = {}) => {
   return {
     add: async body => {
       if (commentId) {
-        return updateComment({ owner, repo, comment_id: commentId, body: getBody(body) }).catch(() => {});
+        return updateComment({ owner, repo, comment_id: commentId, body: getBody(body) }).catch(err => {
+          console.error(`Workflow update comment failed`, err?.message || err);
+        });
       }
 
-      return createComment({ owner, repo, issue_number: issueNumber, body: getBody(body) }).catch(() => {});
+      return createComment({ owner, repo, issue_number: issueNumber, body: getBody(body) }).catch(err => {
+        console.error(`Workflow create comment failed`, err?.message || err);
+      });
     },
-    remove: async () => deleteComment({ owner, repo, comment_id: commentId }).catch(() => {}),
+    remove: async () => deleteComment({ owner, repo, comment_id: commentId }).catch(err => {
+      console.error(`Workflow remove comment failed`, err?.message || err);
+    }),
     existingCommentId: commentId,
     isComment: commentId !== undefined
-  };
-};
-
-/**
- * Get a comment's reactions.
- *
- * @param config
- * @param config.signature
- * @param config.github
- * @param config.context
- * @returns {Promise<{authorReaction: number}>}
- */
-const getReactions = async ({ signature, github, context } = {}) => {
-  const { login: author } = context?.payload?.pull_request?.user || {};
-  const commentId = await getCommentId(signature, { github, context });
-  const listForIssueComment = github?.rest?.reactions?.listForIssueComment;
-  let authorReaction = 0;
-
-  if (listForIssueComment) {
-    const { data: reactions } = await listForIssueComment({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      comment_id: commentId
-    }).catch(err => {
-      console.error(`getReactions failed for commentId ${commentId}`, err?.message || err);
-    }) || {};
-
-    const initialAuthorReaction = reactions?.find(reaction => reaction?.user?.login === author);
-
-    switch (initialAuthorReaction?.content) {
-      case '-1':
-        authorReaction = -1;
-        break;
-      case '+1':
-        authorReaction = 1;
-        break;
-    }
-  }
-
-  return {
-    authorReaction
   };
 };
 
@@ -419,17 +391,6 @@ const start = async ({
     await addLabels([LABEL_PRECHECKS_PASS]);
 
     return;
-  } else {
-    // Or contributors get a contribution guide comment
-    const agreementComment = `### 🤖 PR Contributor's Agreement\n\n` +
-      `Thank you for the PR! If you haven't already, make sure to read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md).`;
-
-    const botAgreementSignature = '<!-- precheck-bot-agreement-V1 -->';
-    const { add: addBotAgreement, isComment: hasBotAgreementComment } = await setComment({ signature: botAgreementSignature, github, context });
-
-    if (!hasBotAgreementComment) {
-      await addBotAgreement(agreementComment);
-    }
   }
 
   // Signature checks found feature-like work, notify the user they may not be following guidance
@@ -439,8 +400,9 @@ const start = async ({
 
   if (codeSignature.hasTell) {
     const botComment = `### 🤖 PR Quality Guidance\n` +
-      `I've moved this to **Draft** due to the scope of changes. Make sure you review the [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md).\n\n` +
-      `_This comment updates automatically._`;
+      `I've moved this to **Draft** due to the scope of changes, and to avoid confusion.\n` +
+      `Once you've focused your changes I'll take another look.\n\n` +
+      `_Read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). This comment updates automatically._`;
 
     await convertPrToDraft({ github, context });
     await addBotComment(botComment);
@@ -459,10 +421,9 @@ const start = async ({
   // Signature checks found something, alert the contributor in good faith
   if (codeSignature.errors.length > 0) {
     const botComment = `### 🤖 PR Quality Guidance\n` +
-      `I found some issues with your work. Make sure you've reviewed the [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). Once the following updates are addressed, you'll be queued for review:\n\n` +
+      `I found some issues with your work. Once the following updates are addressed, you'll be queued for review:\n\n` +
       `${codeSignature.errors.map(err => `- ${err}`).join('\n')}\n\n` +
-      `_Helpful hint, aiming for a fix or feature will help you focus the scope of your work!_` +
-      `_This comment updates automatically._`;
+      `_Read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). This comment updates automatically._`;
 
     await addBotComment(botComment);
     await addLabels([LABEL_NEEDS_CLEANUP]);
@@ -484,7 +445,7 @@ const start = async ({
     // Or confirm the work has passed pre-check
     const successComment = `### 🤖 PR Quality Guidance\n` +
       `I finished my scan and all pre-checks pass!\n\n` +
-      `_This comment updates automatically._`;
+      `_Read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). This comment updates automatically._`;
 
     await addBotComment(successComment);
     await addLabels([LABEL_PRECHECKS_PASS]);
@@ -497,7 +458,6 @@ export {
   doesListContainAnotherListValues,
   getCommentId,
   getPullRequest,
-  getReactions,
   setComment,
   setLabels,
   signatureScan,
