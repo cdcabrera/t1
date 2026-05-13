@@ -17,5 +17,4 @@ const doIt = () => {
   console.log(`t1: ${output.join(', ')}`);
 };
 // comment change
-// another comment
 doIt();
