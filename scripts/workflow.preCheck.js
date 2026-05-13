@@ -359,7 +359,7 @@ const setSummary = async ({ core } = {}) => {
 
   return {
     add: async body => {
-      await clearSummary().catch(() => {});
+      // await clearSummary().catch(() => {});
       await addSummary(body).write().catch(err => {
         console.error('Workflow create summary failed.', err?.message || err);
       });
@@ -421,9 +421,7 @@ const start = async ({
       `- Ensure all updates are associated with a GitHub issue.\n` +
       `- Align to the codebase style and remove excessive changes.\n` +
       `- Split changes into smaller, focused PR contributions.\n\n` +
-      `Once you've focused your changes I'll take another look.\n\n` +
-      `**Labels**: \`${LABEL_NEEDS_CLEANUP}\`, \`${LABEL_PRECHECKS_FAIL}\` \n\n` +
-      `_Read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). This comment updates automatically._`;
+      `Once you've focused your changes I'll take another look.\n\n`;
 
     await addSummary(botComment);
     await addBotComment(botComment);
@@ -446,10 +444,7 @@ const start = async ({
   // Signature checks found something, alert the contributor in good faith
   if (codeSignature.errors.length > 0) {
     const botComment = `### 🤖 PR Quality Guidance\n` +
-      `I found some issues with your work. Once the following updates are addressed, you'll be queued for review:\n\n` +
-      `${codeSignature.errors.map(err => `- ${err}`).join('\n')}\n\n` +
-      `**Labels**: \`${LABEL_NEEDS_CLEANUP}\` \n\n` +
-      `_Read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). This comment updates automatically._`;
+      `I found some issues with your work. Once the following updates are addressed, you'll be queued for review:\n\n`;
 
     await addSummary(botComment);
     await addBotComment(botComment);
@@ -471,9 +466,7 @@ const start = async ({
   } else {
     // Or confirm the work has passed pre-check
     const successComment = `### 🤖 PR Quality Guidance\n` +
-      `I finished my scan and all pre-checks pass!\n\n` +
-      `**Labels**: \`${LABEL_PRECHECKS_PASS}\`${codeSignature?.isSecModified ? `\`,${LABEL_NEEDS_MAINTAINER}\`` : ''} \n\n` +
-      `_Read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). This comment updates automatically._`;
+      `I finished my scan and all pre-checks pass!\n\n`;
 
     await addSummary(successComment);
     await addBotComment(successComment);
