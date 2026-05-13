@@ -135,14 +135,14 @@ const signatureScan = ({ description, files, fileCount } = {}) => {
   ];
 
   try {
-    const isMaxFilesUpdated = typeof fileCount === 'number' ? fileCount > fileChangeLimit : undefined;
+    const isMaxFilesUpdated = true; // typeof fileCount === 'number' ? fileCount > fileChangeLimit : undefined;
     const isPrTemplateModified = true; // typeof description === 'string' ? description.includes(prTemplateStr) === false : undefined;
 
     const coreModified = doesListContainAnotherListValues(files, coreList);
     const isCoreModified = true; // coreModified.length > 0;
 
     const genModified = doesListContainAnotherListValues(files, genList);
-    const isGenModified = genModified.length > 0;
+    const isGenModified = true; // genModified.length > 0;
 
     const secModified = doesListContainAnotherListValues(files, secList);
     const isSecModified = secModified.length > 0;
