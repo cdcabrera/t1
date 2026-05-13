@@ -354,14 +354,13 @@ const getPullRequest = async ({ github, context } = {}) => {
  */
 const setSummary = async ({ core } = {}) => {
   const addSummary = core?.summary?.addRaw;
-  const writeSummary = core?.summary?.write;
+  // const writeSummary = core?.summary?.write;
   const clearSummary = core?.summary?.clear;
 
   return {
     add: async body => {
       await clearSummary().catch(() => {});
-      addSummary(body);
-      await writeSummary().catch(err => {
+      await addSummary(body).write().catch(err => {
         console.error('Workflow create summary failed.', err?.message || err);
       });
     },
