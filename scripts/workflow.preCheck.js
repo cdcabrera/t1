@@ -346,33 +346,6 @@ const getPullRequest = async ({ github, context } = {}) => {
 };
 
 /**
- * Set a pull request summary.
- *
- * @param config
- * @param config.core
- * @returns {Promise<{add: function(*): Promise<void>, remove: function(): Promise<void>}>}
- */
-const setSummary = async ({ core } = {}) => {
-  const addSummary = core?.summary?.addRaw;
-  // const writeSummary = core?.summary?.write;
-  const clearSummary = core?.summary?.clear;
-
-  return {
-    add: async body => {
-      // await clearSummary().catch(() => {});
-      await addSummary(body).write().catch(err => {
-        console.error('Workflow create summary failed.', err?.message || err);
-      });
-    },
-    remove: async () => {
-      await clearSummary().catch(err => {
-        console.error('Workflow remove summary failed.', err?.message || err);
-      });
-    }
-  };
-};
-
-/**
  * Start the pre-check process.
  *
  * @param config - Configuration params
@@ -394,17 +367,16 @@ const start = async ({
 } = {}, { github, context, core } = {}) => {
   const { author, authorType, authorRole, description: prDescription, fileCount: prFileCount, files: prFiles } = await getPullRequest({ github, context });
   const { add: addLabels, remove: removeLabels } = await setLabels({ github, context });
-  const { add: addSummary } = await setSummary({ core });
 
   core.notice('Gatekeeper policy checks are active! Please refer to the workflow logs and summaries for guidance.');
 
   // Core contributors get a pass
   if (coreContributors({ author, authorType, authorRole })) {
     await addLabels([LABEL_PRECHECKS_PASS]);
-    const botComment = `### 🤖 PR Quality Guidance\n` +
+    const botComment = `🤖 PR Quality Guidance\n` +
       `Contributor found, skipping pre-checks: ${author}`;
 
-    await addSummary(botComment);
+    core.notice(botComment);
 
     return;
   }
@@ -421,11 +393,13 @@ const start = async ({
       `- Ensure all updates are associated with a GitHub issue.\n` +
       `- Align to the codebase style and remove excessive changes.\n` +
       `- Split changes into smaller, focused PR contributions.\n\n` +
-      `Once you've focused your changes I'll take another look.\n\n`;
+      `Once you've focused your changes I'll take another look.\n\n` +
+      `**Labels**: \`${LABEL_NEEDS_CLEANUP}\`, \`${LABEL_PRECHECKS_FAIL}\` \n\n` +
+      `_Read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). This comment updates automatically._`;
 
-    await addSummary(botComment);
     await addBotComment(botComment);
     await addLabels([LABEL_NEEDS_CLEANUP, LABEL_PRECHECKS_FAIL]);
+    core.setFailed(botComment);
 
     return;
   }
@@ -435,8 +409,8 @@ const start = async ({
     await addLabels([LABEL_NEEDS_MAINTAINER]);
 
     core.warning(
-      'PR Quality Guidance\n\n' +
-      'Security-sensitive changes detected. A maintainer has been notified.\n' +
+      'PR Quality Guidance' +
+      'Security-sensitive changes detected. A maintainer has been notified.' +
       `**Labels**: \`${LABEL_NEEDS_MAINTAINER}\``
     );
   }
@@ -444,11 +418,14 @@ const start = async ({
   // Signature checks found something, alert the contributor in good faith
   if (codeSignature.errors.length > 0) {
     const botComment = `### 🤖 PR Quality Guidance\n` +
-      `I found some issues with your work. Once the following updates are addressed, you'll be queued for review:\n\n`;
+      `I found some issues with your work. Once the following updates are addressed, you'll be queued for review:\n\n` +
+      `${codeSignature.errors.map(err => `- ${err}`).join('\n')}\n\n` +
+      `**Labels**: \`${LABEL_NEEDS_CLEANUP}\` \n\n` +
+      `_Read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). This comment updates automatically._`;
 
-    await addSummary(botComment);
     await addBotComment(botComment);
     await addLabels([LABEL_NEEDS_CLEANUP]);
+    core.setFailed(botComment);
 
     return;
   }
@@ -460,15 +437,16 @@ const start = async ({
       `**Labels**: \`${LABEL_NEEDS_MAINTAINER}\` \n\n` +
       `_This comment updates automatically._`;
 
-    await addSummary(errorComment);
     await addBotComment(errorComment);
     await addLabels([LABEL_NEEDS_MAINTAINER]);
+    core.setFailed(errorComment);
   } else {
     // Or confirm the work has passed pre-check
     const successComment = `### 🤖 PR Quality Guidance\n` +
-      `I finished my scan and all pre-checks pass!\n\n`;
+      `I finished my scan and all pre-checks pass!\n\n` +
+      `**Labels**: \`${LABEL_PRECHECKS_PASS}\`${codeSignature?.isSecModified ? `\`,${LABEL_NEEDS_MAINTAINER}\`` : ''} \n\n` +
+      `_Read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). This comment updates automatically._`;
 
-    await addSummary(successComment);
     await addBotComment(successComment);
     await addLabels([LABEL_PRECHECKS_PASS]);
 
@@ -479,6 +457,7 @@ const start = async ({
     }
 
     await removeLabels(labelsToRemove);
+    core.setFailed(successComment);
   }
 };
 
@@ -489,7 +468,6 @@ export {
   getPullRequest,
   setComment,
   setLabels,
-  setSummary,
   signatureScan,
   start
 };
