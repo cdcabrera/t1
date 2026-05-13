@@ -135,14 +135,14 @@ const signatureScan = ({ description, files, fileCount } = {}) => {
   ];
 
   try {
-    const isMaxFilesUpdated = true; // typeof fileCount === 'number' ? fileCount > fileChangeLimit : undefined;
-    const isPrTemplateModified = true; // typeof description === 'string' ? description.includes(prTemplateStr) === false : undefined;
+    const isMaxFilesUpdated = typeof fileCount === 'number' ? fileCount > fileChangeLimit : undefined;
+    const isPrTemplateModified = typeof description === 'string' ? description.includes(prTemplateStr) === false : undefined;
 
     const coreModified = doesListContainAnotherListValues(files, coreList);
-    const isCoreModified = true; // coreModified.length > 0;
+    const isCoreModified = coreModified.length > 0;
 
     const genModified = doesListContainAnotherListValues(files, genList);
-    const isGenModified = true; // genModified.length > 0;
+    const isGenModified = genModified.length > 0;
 
     const secModified = doesListContainAnotherListValues(files, secList);
     const isSecModified = secModified.length > 0;
@@ -226,7 +226,7 @@ const setLabels = ({ github, context } = {}) => {
     add: async labels => {
       if (Array.isArray(labels)) {
         await addLabels({ owner, repo, issue_number: issueNumber, labels }).catch(err => {
-          console.error(`Workflow add labels failed: ${labels.join(', ')}`, err?.message || err);
+          console.error(`Workflow add labels (${labels.join(', ')}) failed.`, err?.message || err);
         });
       }
     },
@@ -234,7 +234,7 @@ const setLabels = ({ github, context } = {}) => {
       if (Array.isArray(labels)) {
         for (const label of labels) {
           await removeLabel({ owner, repo, issue_number: issueNumber, name: label }).catch(err => {
-            console.error(`Workflow remove label failed: ${label}`, err?.message || err);
+            console.error(`Workflow remove label ${label} failed.`, err?.message || err);
           });
         }
       }
@@ -292,16 +292,16 @@ const setComment = async ({ signature, github, context } = {}) => {
     add: async body => {
       if (commentId) {
         return updateComment({ owner, repo, comment_id: commentId, body: getBody(body) }).catch(err => {
-          console.error(`Workflow update comment failed`, err?.message || err);
+          console.error('Workflow update comment failed.', err?.message || err);
         });
       }
 
       return createComment({ owner, repo, issue_number: issueNumber, body: getBody(body) }).catch(err => {
-        console.error(`Workflow create comment failed`, err?.message || err);
+        console.error('Workflow create comment failed.', err?.message || err);
       });
     },
     remove: async () => deleteComment({ owner, repo, comment_id: commentId }).catch(err => {
-      console.error(`Workflow remove comment failed`, err?.message || err);
+      console.error('Workflow remove comment failed.', err?.message || err);
     }),
     existingCommentId: commentId,
     isComment: commentId !== undefined
@@ -346,6 +346,34 @@ const getPullRequest = async ({ github, context } = {}) => {
 };
 
 /**
+ * Set a pull request summary.
+ *
+ * @param config
+ * @param config.core
+ * @returns {Promise<{add: function(*): Promise<void>, remove: function(): Promise<void>}>}
+ */
+const setSummary = async ({ core } = {}) => {
+  const addSummary = core?.summary?.addRaw;
+  const writeSummary = core?.summary?.write;
+  const clearSummary = core?.summary?.clear;
+
+  return {
+    add: async body => {
+      await clearSummary().catch(() => {});
+      addSummary(body);
+      await writeSummary().catch(err => {
+        console.error('Workflow create summary failed.', err?.message || err);
+      });
+    },
+    remove: async () => {
+      await clearSummary().catch(err => {
+        console.error('Workflow remove summary failed.', err?.message || err);
+      });
+    }
+  };
+};
+
+/**
  * Start the pre-check process.
  *
  * @param config - Configuration params
@@ -367,11 +395,17 @@ const start = async ({
 } = {}, { github, context, core } = {}) => {
   const { author, authorType, authorRole, description: prDescription, fileCount: prFileCount, files: prFiles } = await getPullRequest({ github, context });
   const { add: addLabels, remove: removeLabels } = await setLabels({ github, context });
+  const { add: addSummary } = await setSummary({ core });
+
+  core.notice('Gatekeeper policy checks are active! Please refer to the workflow logs and summaries for guidance.');
 
   // Core contributors get a pass
   if (coreContributors({ author, authorType, authorRole })) {
-    console.log(`Contributor found, skipping pre-checks: ${author}`);
     await addLabels([LABEL_PRECHECKS_PASS]);
+    const botComment = `### 🤖 PR Quality Guidance\n` +
+      `Contributor found, skipping pre-checks: ${author}`;
+
+    await addSummary(botComment);
 
     return;
   }
@@ -389,12 +423,12 @@ const start = async ({
       `- Align to the codebase style and remove excessive changes.\n` +
       `- Split changes into smaller, focused PR contributions.\n\n` +
       `Once you've focused your changes I'll take another look.\n\n` +
+      `**Labels**: \`${LABEL_NEEDS_CLEANUP}\`, \`${LABEL_PRECHECKS_FAIL}\` \n\n` +
       `_Read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). This comment updates automatically._`;
 
+    await addSummary(botComment);
     await addBotComment(botComment);
     await addLabels([LABEL_NEEDS_CLEANUP, LABEL_PRECHECKS_FAIL]);
-
-    core.setFailed('PR placed on Policy Hold. Make sure to review the contributing guidelines regarding potential feature and generated work and why your PatternFly MCP contribution may require planning.');
 
     return;
   }
@@ -402,6 +436,12 @@ const start = async ({
   // Sec check
   if (codeSignature.isSecModified) {
     await addLabels([LABEL_NEEDS_MAINTAINER]);
+
+    core.warning(
+      'PR Quality Guidance\n\n' +
+      'Security-sensitive changes detected. A maintainer has been notified.\n' +
+      `**Labels**: \`${LABEL_NEEDS_MAINTAINER}\``
+    );
   }
 
   // Signature checks found something, alert the contributor in good faith
@@ -409,12 +449,12 @@ const start = async ({
     const botComment = `### 🤖 PR Quality Guidance\n` +
       `I found some issues with your work. Once the following updates are addressed, you'll be queued for review:\n\n` +
       `${codeSignature.errors.map(err => `- ${err}`).join('\n')}\n\n` +
+      `**Labels**: \`${LABEL_NEEDS_CLEANUP}\` \n\n` +
       `_Read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). This comment updates automatically._`;
 
+    await addSummary(botComment);
     await addBotComment(botComment);
     await addLabels([LABEL_NEEDS_CLEANUP]);
-
-    core.setFailed('PR pre-check requirements not met. Make sure to review the contributing guidelines.');
 
     return;
   }
@@ -423,19 +463,30 @@ const start = async ({
   if (codeSignature.hasFailed) {
     const errorComment = `### 🤖 PR Quality Guidance\n` +
       `${codeSignature.errors.map(err => `- ${err}`).join('\n')}\n\n` +
+      `**Labels**: \`${LABEL_NEEDS_MAINTAINER}\` \n\n` +
       `_This comment updates automatically._`;
 
+    await addSummary(errorComment);
     await addBotComment(errorComment);
     await addLabels([LABEL_NEEDS_MAINTAINER]);
   } else {
     // Or confirm the work has passed pre-check
     const successComment = `### 🤖 PR Quality Guidance\n` +
       `I finished my scan and all pre-checks pass!\n\n` +
+      `**Labels**: \`${LABEL_PRECHECKS_PASS}\`${codeSignature?.isSecModified ? `\`,${LABEL_NEEDS_MAINTAINER}\`` : ''} \n\n` +
       `_Read our [contribution guidelines](https://github.com/patternfly/patternfly-mcp/blob/main/CONTRIBUTING.md). This comment updates automatically._`;
 
+    await addSummary(successComment);
     await addBotComment(successComment);
     await addLabels([LABEL_PRECHECKS_PASS]);
-    await removeLabels([LABEL_NEEDS_CLEANUP, LABEL_NEEDS_MAINTAINER, LABEL_PRECHECKS_FAIL]);
+
+    const labelsToRemove = [LABEL_NEEDS_CLEANUP, LABEL_PRECHECKS_FAIL];
+
+    if (!codeSignature.isSecModified) {
+      labelsToRemove.push(LABEL_NEEDS_MAINTAINER);
+    }
+
+    await removeLabels(labelsToRemove);
   }
 };
 
@@ -446,6 +497,7 @@ export {
   getPullRequest,
   setComment,
   setLabels,
+  setSummary,
   signatureScan,
   start
 };
