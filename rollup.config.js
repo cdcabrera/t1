@@ -5,7 +5,7 @@ import del from 'rollup-plugin-delete';
 import pkg from './package.json';
 
 process.env.NODE_ENV = 'production';
-
+// test
 export default {
   input: pkg.source,
   output: [
